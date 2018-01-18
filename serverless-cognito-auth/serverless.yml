@@ -1,0 +1,204 @@
+# Serverless config file
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: serverless-cognito-auth
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: python2.7
+custom:
+  BucketName: spa-serverless-app-demo
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.py
+#    - exclude-me-dir/**
+
+
+resources:
+  Resources:
+
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: TccDemoApp
+        AliasAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+
+    UserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: TcccDemoApp
+        UserPoolId:
+              Ref: UserPool
+        GenerateSecret: false
+
+    #This custom resource passes the congnito userpool info created in template as input to the UpdateConfigFunction
+    UpdateConfig:
+      Properties:
+        ServiceToken: { Fn::GetAtt: [ UpdateConfigFunction, Arn ] }
+        UserPool:
+            Ref: UserPool
+        Client:
+            Ref: UserPoolClient
+        Region:
+            Ref: "AWS::Region"
+        Bucket: ${self:custom.BucketName}
+      Type: "Custom::ConfigFile"
+
+    CognitoConfigRole:
+      Type: AWS::IAM::Role
+      Properties:
+
+        Path: /TcccDemoApp/
+        AssumeRolePolicyDocument:
+          Statement:
+            -
+              Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          -
+            PolicyName: CognitoConfig
+            PolicyDocument:
+              Statement:
+                -
+                  Sid: Logging
+                  Effect: Allow
+                  Action:
+                    - "logs:CreateLogGroup"
+                    - "logs:CreateLogStream"
+                    - "logs:PutLogEvents"
+                  Resource: "*"
+                -
+                  Sid: Cognito
+                  Effect: Allow
+                  Action:
+                    - "cognito-idp:CreateUserPool"
+                    - "cognito-idp:DeleteUserPool"
+                    - "cognito-idp:CreateUserPoolClient"
+                    - "cognito-idp:DeleteUserPoolClient"
+                  Resource: "*"
+                -
+                  Sid: ConfigBucketWriteAccess
+                  Effect: Allow
+                  Action:
+                    - "s3:PutObject"
+                    - "s3:PutObjectAcl"
+                    - "s3:PutObjectVersionAcl"
+                  Resource:
+                    - "arn:aws:s3:::${self:custom.BucketName}/*"
+  # This lambda function updates the S3 static web sites javascript config.js with cognito info via the custom updateconfig resource
+    UpdateConfigFunction:
+      Properties:
+        Description: Copies objects from a source S3 bucket to a destination
+        Handler: index.handler
+        Runtime: python2.7
+        Role: { Fn::GetAtt: [ CognitoConfigRole, Arn ] }
+        Timeout: 120
+        Code:
+          ZipFile: |
+            import json
+            import boto3
+            import cfnresponse
+
+            s3 = boto3.resource('s3')
+
+            def create(properties, physical_id):
+              userPoolId = properties['UserPool']
+              clientId = properties['Client']
+              region = properties['Region']
+              bucket = properties['Bucket']
+
+              object = s3.Object(bucket, 'js/config.js')
+              config_content = """
+            var _config = {
+                cognito: {
+                    userPoolId: '%s', // e.g. us-east-2_uXboG5pAb
+                    userPoolClientId: '%s', // e.g. 25ddkmj4v6hfsfvruhpfi7n4hv
+                    region: '%s', // e.g. us-east-2
+                },
+                api: {
+                    invokeUrl: 'Base URL of your API including the stage', // e.g. https://rc7nyt4tql.execute-api.us-west-2.amazonaws.com/prod'
+                }
+            };
+                """
+              config_content = config_content % (userPoolId, clientId, region)
+              config = s3.Object(bucket,'js/config.js')
+              config.put(Body=config_content)
+              return cfnresponse.SUCCESS, None
+
+            def update(properties, physical_id):
+              return create(properties, physical_id)
+
+            def delete(properties, physical_id):
+              return cfnresponse.SUCCESS, physical_id
+
+            def handler(event, context):
+              print "Received event: %s" % json.dumps(event)
+
+              status = cfnresponse.FAILED
+              new_physical_id = None
+
+              try:
+                properties = event.get('ResourceProperties')
+                physical_id = event.get('PhysicalResourceId')
+
+                status, new_physical_id = {
+                  'Create': create,
+                  'Update': update,
+                  'Delete': delete
+                }.get(event['RequestType'], lambda x, y: (cfnresponse.FAILED, None))(properties, physical_id)
+              except Exception as e:
+                print "Exception: %s" % e
+                status = cfnresponse.FAILED
+              finally:
+                cfnresponse.send(event, context, status, {}, new_physical_id)
+
+
+      Type: AWS::Lambda::Function
