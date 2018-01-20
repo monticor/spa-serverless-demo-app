@@ -55,8 +55,9 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  request:
-    handler: handler.request
+  backend:
+    role: TcccServerlessBackEndRole
+    handler: handler.handler
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -94,10 +95,11 @@ functions:
 
 resources:
   Resources:
-    TcccServerlessBackEndgRole:
+    TcccServerlessBackEndRole:
       Type: AWS::IAM::Role
       Properties:
-
+        ManagedPolicyArns:
+                        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         Path: /TcccDemoApp/
         AssumeRolePolicyDocument:
           Statement:
@@ -112,30 +114,40 @@ resources:
             PolicyDocument:
               Statement:
                 -
-                  Sid: Logging
-                  Effect: Allow
-                  Action:
-                    - "logs:CreateLogGroup"
-                    - "logs:CreateLogStream"
-                    - "logs:PutLogEvents"
-                  Resource: "*"
-                -
                   Sid: DynamoDB
                   Effect: Allow
                   Action:
-                    - "dynamodb:*"
+                      - dynamodb:Query
+                      - dynamodb:Scan
+                      - dynamodb:GetItem
+                      - dynamodb:PutItem
+                      - dynamodb:UpdateItem
+                      - dynamodb:DeleteItem
                   Resource:
-                        Fn::Join:
+                      - Fn::Join:
                           - ':'
-                          - - 'arn:aws:dynamodb:'
-                            - Ref: "AWS::Region"
-                            - Ref: "AWS::Account"
-                            - 'TccDemo/'
+                          -
+                            - 'arn:aws:dynamodb'
+                            - Ref: 'AWS::Region'
+                            - Ref: 'AWS::AccountId'
+                            - 'table/Rides'
 
 
-
-                  Resource: "arn:aws:dynamodb:<REGION>:<ACCOUNTNUMBER>:table/<TABLE-NAME>"
-
+    Rides:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: RideId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: RideId
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: Rides
 
 
 #  Outputs:
