@@ -3,6 +3,9 @@ service: tccc-serverless-backend
 
 provider:
   name: aws
+  provider:
+#  environment:
+#    GW_URL: { "Fn::Join" : ["", [ "https://", { "Ref" : "ApiGatewayRestApi" }, ".execute-api.${self:custom.region}.amazonaws.com/dev ] ]  }
 
 
 functions:
@@ -12,16 +15,12 @@ functions:
     runtime: nodejs6.10
     events:
        - http:
-          path: /ride
-          cors: true
-          method: post
-          authorizer:
-            arn:
+            path: /ride
+            cors: true
+            method: post
+            authorizer: ${cf:serverless-cognito-auth-dev.CognitoARN}
 
-  UpdateConfigFunction:
-    role:
-    handler: index.handler
-    runtime: python2.7
+
 
 resources:
   Resources:
@@ -60,21 +59,3 @@ resources:
                             - Ref: 'AWS::Region'
                             - Ref: 'AWS::AccountId'
                             - 'table/Rides'
-
-
-    Rides:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: RideId
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: RideId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: Rides
-

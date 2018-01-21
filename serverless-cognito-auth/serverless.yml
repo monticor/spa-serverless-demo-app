@@ -11,23 +11,7 @@ custom:
   CognitoARN:
 
 #functions:
-#  backend:
-#    role: TcccServerlessBackEndRole
-#    handler: handler.handler
-#    runtime: nodejs6.10
-#    events:
-#       - http:
-#          path: /ride
-#          cors: true
-#          method: post
-#          authorizer:
-#            arn: { Fn::GetAtt: [ UserPool, Arn ] }
 
-
-  UpdateConfigFunction:
-    role:
-    handler: index.handler
-    runtime: python2.7
 
 
 resources:
@@ -176,58 +160,6 @@ resources:
 
       Type: AWS::Lambda::Function
 
-    TcccServerlessBackEndRole:
-      Type: AWS::IAM::Role
-      Properties:
-        ManagedPolicyArns:
-                        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        Path: /TcccDemoApp/
-        AssumeRolePolicyDocument:
-          Statement:
-            -
-              Effect: Allow
-              Principal:
-                Service: lambda.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          -
-            PolicyName: TcccBackEnd
-            PolicyDocument:
-              Statement:
-                -
-                  Sid: DynamoDB
-                  Effect: Allow
-                  Action:
-                      - dynamodb:Query
-                      - dynamodb:Scan
-                      - dynamodb:GetItem
-                      - dynamodb:PutItem
-                      - dynamodb:UpdateItem
-                      - dynamodb:DeleteItem
-                  Resource:
-                      - Fn::Join:
-                          - ':'
-                          - - 'arn:aws:dynamodb'
-                            - Ref: 'AWS::Region'
-                            - Ref: 'AWS::AccountId'
-                            - 'table/Rides'
-
-
-    Rides:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: RideId
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: RideId
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: Rides
 
 
   Outputs:
