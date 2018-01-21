@@ -1,5 +1,0 @@
-
-
-
-
-Resource: "arn:aws:dynamodb:<REGION>:<ACCOUNTNUMBER>:table/<TABLE-NAME>"
