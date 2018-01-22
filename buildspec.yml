@@ -1,8 +1,8 @@
-Version: 0.1
-Phases:
-Install:
-	Commands:
-		-npm install -g serverless
-Post_build:
-	Commands:
-Serverless deploy --region us-east-1 --verbose
+version: 0.1
+phases:
+  install:
+      commands:
+        - npm install -g serverless
+  build:
+     commands:
+          - serverless deploy --stage dev us-east-1 --verbose
