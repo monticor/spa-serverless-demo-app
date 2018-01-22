@@ -3,7 +3,7 @@ phases:
   install:
       commands:
         - npm install -g serverless
-  Build:
+  build:
      commands:
           - cd sls-demo-backend-cognito
           - serverless deploy

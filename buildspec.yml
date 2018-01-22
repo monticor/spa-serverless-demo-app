@@ -1,9 +1,0 @@
-version: 0.2
-phases:
-  install:
-      commands:
-        - npm install -g serverless
-  Build:
-     commands:
-          - cd sls-demo-backend
-          - serverless deploy
