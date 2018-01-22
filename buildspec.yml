@@ -3,7 +3,13 @@ phases:
   install:
       commands:
         - npm install -g serverless
-  build:
+
+  Deploy-backend-cognito:
      commands:
-          - cd serverless-cognito-auth/
-          - serverless deploy --stage dev us-east-1 --verbose
+          - cd sls-demo-backend-cognito
+          - serverless deploy
+
+  Deploy-backend-cognito:
+     commands:
+          - cd sls-demo-backend
+          - serverless deploy
