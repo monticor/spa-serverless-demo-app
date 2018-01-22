@@ -1,3 +1,5 @@
+# updates S3 Single Page Application js/config.js with API Gateway Url
+
   import json
   import boto3
   import cfnresponse

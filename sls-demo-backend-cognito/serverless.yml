@@ -1,6 +1,6 @@
 
 
-service: serverless-cognito-auth
+service: sls-demo-backend-cognito
 
 
 provider:
@@ -93,7 +93,7 @@ resources:
   # This lambda function updates the S3 static web sites javascript config.js with cognito info via the custom updateconfig resource
     UpdateConfigFunction:
       Properties:
-        Description: Updates the config.js file with the cognito pool information
+        Description: Copies objects from a source S3 bucket to a destination
         Handler: index.handler
         Runtime: python2.7
         Role: { Fn::GetAtt: [ CognitoConfigRole, Arn ] }
@@ -168,4 +168,4 @@ resources:
       Value: { Fn::GetAtt: [ UserPool, Arn ] }
       Export:
         Name: serverless-cognito-auth-dev-CognitoArn
-         #Cognito Userpool ARN gets exported and imported into sls-demo-backend serverless.yml to configure it on the API Gateway
+         #see Fn::ImportValue to use in other services and http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html for documentation on use.
