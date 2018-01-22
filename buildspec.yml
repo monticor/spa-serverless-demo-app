@@ -4,12 +4,12 @@ phases:
       commands:
         - npm install -g serverless
 
-  Deploy-backend-cognito:
+  DeployBackendCognito:
      commands:
           - cd sls-demo-backend-cognito
           - serverless deploy
 
-  Deploy-backend-cognito:
+  DeployBackend:
      commands:
           - cd sls-demo-backend
           - serverless deploy
