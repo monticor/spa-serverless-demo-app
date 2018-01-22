@@ -6,4 +6,5 @@ phases:
   build:
      commands:
           - cd sls-demo-backend
-          - serverless deploy
+          - pwd
+          - serverless deploy -v

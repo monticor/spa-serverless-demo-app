@@ -6,4 +6,5 @@ phases:
   build:
      commands:
           - cd sls-demo-backend-cognito
-          - serverless deploy
+          - pwd
+          - serverless deploy -v
